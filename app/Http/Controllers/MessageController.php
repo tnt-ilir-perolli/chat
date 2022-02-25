@@ -41,8 +41,15 @@ class MessageController extends Controller
         $input = $request->all();
         $user_id = auth()->user()->id;
         $receiver_id= $request->receiver_id;
-//        Message::create($input);
+        $user = User::find($receiver_id);
+        if (!$user){
+            return;
+        }
+
+        $message = Message::create(['name'=>$input['name'], 'sender_id'=>$user_id, 'receiver_id'=>$receiver_id]);
+
         event(new sendMessage($user_id,$receiver_id, $input['name']));
+        return response(['id'=>$message->id]);
     }
 
     /**
@@ -54,7 +61,13 @@ class MessageController extends Controller
     public function show($id)
     {
         $user = User::findOrFail($id);
-        return view ('messages.show',compact('user'));
+        $current_user = auth()->user()->id;
+        $messages_count = $user->messages->count();
+        $user_messages = Message::where('receiver_id',$id)->where('sender_id',$current_user)->orWhere(function ($q) use ($id,$current_user){
+            $q->where('sender_id',$id)->where('receiver_id',$current_user);
+        })->orderBy('id','DESC')->get();
+
+        return view ('messages.show',compact('user', 'user_messages','messages_count'));
     }
 
     /**
@@ -88,6 +101,9 @@ class MessageController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $message = Message::findOrFail($id);
+        if (auth()->user()->id == $message->sender_id){
+            $message->delete();
+        }
     }
 }

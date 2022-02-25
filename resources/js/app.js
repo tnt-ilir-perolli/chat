@@ -1,11 +1,14 @@
 require('./bootstrap');
 
-const message_input = document.getElementById("message_input");
-const message_form = document.querySelector("#message_form");
+const message_input = document.querySelector("#message_input");
 const messages_el = document.querySelector('.messages');
 const receiver_id = document.querySelector('#receiver_id');
 const current_user_id = document.querySelector('#current_user');
-message_form.addEventListener('submit',function (e){
+const send_btn = document.querySelector('.send_message');
+const current_user_name = document.querySelector('#current_user_name');
+const leave_btn = document.querySelector('.leave-channel');
+const remove_btn = document.querySelector('#remove');
+send_btn.addEventListener('click',function (e){
     e.preventDefault();
     let has_errors = false;
 
@@ -16,6 +19,7 @@ message_form.addEventListener('submit',function (e){
     if (has_errors){
         return;
     }
+
     const options = {
         method:'post',
         url:'/sendMessage',
@@ -24,21 +28,43 @@ message_form.addEventListener('submit',function (e){
             receiver_id:receiver_id.value
         }
     }
-    axios(options);
-    message_input.value = '';
-    message_input.focus();
 
-});
-window.Echo.private(`user_chat`).listen('.user_message',(e)=>{
-    console.log(Number(current_user_id.value),e.sender_id, Number(receiver_id.value))
-    if (Number(current_user_id.value) == e.receiver_id || Number(current_user_id.value) == e.sender_id){
-        const message = `<div class="message"> <strong>${e.sender_name}</strong>: ${e.message}</div>`;
+    const data = axios(options).then(response => {
+
+        addElement(response.data.id);
+    });
+
+
+    const addElement = function (id){
+        const message = `<div class="message" data-id="${id}"> <strong>${current_user_name.value}</strong>: ${message_input.value} <span id="remove" style="color:red; cursor: pointer">(Fshij)</span></div>`;
         messages_el.insertAdjacentHTML('afterbegin',message);
+
         message_input.value = '';
         message_input.focus();
     }
 
-    // console.log(e.receiver_id, receiver_id.value)
-
 });
+leave_btn.addEventListener('click',function (){
+    window.Echo.leave(`user_chat.${Number(current_user_id.value)}`);
+});
+
+window.Echo.private(`user_chat.${Number(current_user_id.value)}`).listen('.user_message',(e)=>{
+        const message = `<div class="message"> <strong>${e.sender_name}</strong>: ${e.message}</div>`;
+        messages_el.insertAdjacentHTML('afterbegin',message);
+});
+if (messages_el) {
+    messages_el.addEventListener('click', function (e) {
+        if (e.target.id == 'remove'){
+        const message = e.target.closest('.message');
+        const id = message.dataset.id;
+            const options = {
+                method:'delete',
+                url:`/message/${id}`,
+            }
+            axios(options);
+        message.remove();
+        }
+
+    });
+}
 

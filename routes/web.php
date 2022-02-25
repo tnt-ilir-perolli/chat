@@ -22,6 +22,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users',[\App\Http\Controllers\UserController::class,'show']);
     Route::get('/user/{id}/messages', [\App\Http\Controllers\MessageController::class, 'show'])->name('user.show');
     Route::post('/sendMessage',[\App\Http\Controllers\MessageController::class, 'store']);
+    Route::delete('/message/{id}',[\App\Http\Controllers\MessageController::class, 'destroy']);
 });
 
 

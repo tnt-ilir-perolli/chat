@@ -22,6 +22,10 @@ class User extends Authenticatable
         'email',
         'password',
     ];
+    public function messages()
+    {
+        return $this->belongsToMany(User::class, 'messages', 'sender_id', 'receiver_id')->withTimestamps()->withPivot('sender_id', 'sender_id','name');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
